@@ -1,1 +1,1 @@
-# NBA-Parlay-Bets
+# NBA Parlay Bets
