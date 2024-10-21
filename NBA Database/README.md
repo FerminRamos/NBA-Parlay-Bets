@@ -26,10 +26,14 @@ Nonetheless, the Folder Structure is formatted as such:
         * game schedule
         > Boston Celtics
             * team statistics
+            * roster overview
             * log information (file last update, etc.)
             > Player 1
                 * player characteristics
-                * player statistics
+                * season Projections
+                * player totals
+                * player 36-Min stats
+                * player advanced stats
                 * log information (file last update, etc.)
             > Player 2
             > Player 3
