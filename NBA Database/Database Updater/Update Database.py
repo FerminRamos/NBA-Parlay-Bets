@@ -9,10 +9,125 @@ import csv
 from tabulate import tabulate
 import requests
 from bs4 import BeautifulSoup
+import shutil  # For deleting non-empty directories
 import Schedule
+import Team
+import Player
 import os
+import Global
 
-BASE_PATH = "/Users/speak_easy/Python UNM/NBA-Parlay-Bets/NBA Database"
+
+# Returns a JSON containing all data parsed from our path. The database has a
+#  specific structure & depth. We can know where we are in the database based
+#  on the depth of the path & keywords used with certain files.
+def parsePath(pathStr):
+    data = {
+        "databaseLocation": "",
+        "season": {
+            "start": "",
+            "end": ""
+        },
+        "team": "",
+        "player": "",
+        "item": {
+            "isFile": True,
+            "filename": ""
+        }
+    }
+
+    data['item']['isFile'] = os.path.isfile(pathStr)
+
+    path = pathStr.replace(f"{Global.BASE_PATH}/", "").split("/")
+    print(path)
+    depth = len(path)
+
+    if data['item']['isFile']:
+        data['item']['filename'] = os.path.basename(pathStr)
+        depth -= 1  # Counts folder depth (remove file from depth count)
+
+    season = path[0].lower().replace(" season", "").split("-")
+    data['season']['start'] = season[0]
+    data['season']['end'] = season[1]
+
+    match depth:
+        case 1:
+            data['databaseLocation'] = "season"
+
+        case 2:
+            data['databaseLocation'] = "team"
+            data['team'] = path[1]
+
+        case 3:
+            data['databaseLocation'] = "player"
+            data['team'] = path[1]
+            data['player'] = path[2]
+
+    return data
+
+
+# Function can do 2 types of updates based on the path received:
+#   1. Directory - Update entire root folder
+#   2. File - Update individual file (except log file)
+# The goal of this function is to parse the path and assign the workload
+#  to the proper functions within this program. Assumes default folder
+#  files exist.
+def update(path):
+    if path.lower().find("log") != -1:
+        print("Can't manually update a log file.")
+        return None
+
+    # 1. Parse data from path
+    data = parsePath(path)
+    databaseLocation = data['databaseLocation']
+    seasonStart = data['season']['start']
+    seasonEnd = data['season']['end']
+    team = data['team']
+    player = data['player']
+    pathIsFile = data['item']['isFile']
+    fileName = data['item']['filename']
+
+    # 2. Assign Responsibilities
+    match databaseLocation:
+        case "season":
+            print()
+
+        case "team":
+            print()
+
+        case "player":
+            # 1. Check to see if player wasn't cut/transferred to a diff. team
+            cut, roster = Team.playerCut(player, team, seasonEnd)
+            cut = False      # temp
+            roster = []      # temp
+
+            # 2a. Player was cut -> Notify user -> Delete existing folder ->
+            #     Try to find player.
+            if cut:
+                print(f">> {player} was cut from {team} <<")
+                print(tabulate(roster))
+                print(f">> {player} was cut from {team} <<")
+                selection = input(
+                    f"Remove player data from '{seasonStart}-{seasonEnd} Season'?  (y/n)").lower()
+                while selection not in ["y", "n", "yes", "no"]:
+                    print("Input not valid. Please type 'y' or 'n'.")
+                    selection = input(
+                        f"Remove player data from '{seasonStart}-{seasonEnd} Season'?  (y/n)").lower()
+
+                if selection == "y" or selection == "yes":
+                    removeItem(path.replace(fileName, "") if pathIsFile else path)
+                    # TODO: Try to find player in their new team
+
+            # 2b. Player not cut -> Send updates to functions
+            else:
+                if pathIsFile:
+                    Player.updateFile(fileName, path)
+
+                else:
+                    for file in os.listdir(path):
+                        if file.find("log information") != -1:
+                            Player.updateFile(file, path)
+
+    return None
 
 
 # Creates a new "20XX-20XX Season" folder. ASSUMES a duplicate folder name DNE.
@@ -23,7 +138,7 @@ def createSeasonFolder(seasonStartYr, seasonEndYr):
         return None
 
     # Make Season Folder
-    newSeasonPath = BASE_PATH + f"/{seasonStartYr}-{seasonEndYr} Season"
+    newSeasonPath = Global.BASE_PATH + f"/{seasonStartYr}-{seasonEndYr} Season"
     os.mkdir(newSeasonPath)
 
     # Game Schedule
@@ -52,7 +167,7 @@ def createSeasonFolder(seasonStartYr, seasonEndYr):
 def createTeamsFolders(path):
     # Gets the pre-set list of teams
     teams = []
-    with open(BASE_PATH + "/Database Updater/Misc Files/teams list.csv", encoding='utf-8') as csvFile:
+    with open(Global.BASE_PATH + "/Database Updater/Misc Files/teams list.csv", encoding='utf-8') as csvFile:
         csvReader = csv.reader(csvFile)
         for line in csvReader:
             teams.append(line[0])
@@ -66,50 +181,6 @@ def createTeamsFolders(path):
             continue
 
 
-# Returns a CSV of players and their characteristics:
-#   1. Player name
-#   2. Team
-#   3. Position
-#   4. Height
-#   5. DOB
-#   6. Nationality
-#   7. Experience (Yrs)
-#   8. Player Website
-def getUpdatedRoster(team, seasonEndYr):
-    websiteLink = getTeamWebsite(team).replace("YEAR", str(seasonEndYr))
-    websiteHTML = requests.get(websiteLink)
-    soup = BeautifulSoup(websiteHTML.content, "html.parser")
-
-    table = soup.find('div', id="div_roster")
-
-    roster = [["Player", "Team", "Position", "Height", "Weight", "DOB", "Nationality", "Experience (Yrs)", "Website"]]
-    for row in table.find_all('tr')[1:]:  # Skips table header
-        player = row.find('a').text
-        playerWebsite = "https://www.basketball-reference.com" + row.find('a')['href']
-        position = row.find('td', {'data-stat': 'pos'}).text
-        height = row.find('td', {'data-stat': 'height'}).text
-        weight = row.find('td', {'data-stat': 'weight'}).text
-        DOB = row.find('td', {'data-stat': 'birth_date'}).text
-        nationality = row.find('td', {'data-stat': 'flag'}).text.split(" ")[1]
-        experience = row.find('td', {'data-stat': 'years_experience'}).text
-
-        roster.append([player, team, position, height, weight, DOB, nationality, experience, playerWebsite])
-
-    # print(tabulate(roster))
-
-    return roster
-
-
-# Opens our database "teams list.csv" to get the team's website link.
-#  Returns a URL string.
-def getTeamWebsite(team):
-    with open(BASE_PATH + "/Database Updater/Misc Files/teams list.csv", "r", encoding='utf-8') as csvFile:
-        csvReader = csv.reader(csvFile)
-        for line in csvReader:
-            if line[0] == team:
-                return line[1]
-
-
 # Returns the list of folders found in a path
 def getFolderPaths(path):
     folders = []
@@ -119,6 +190,14 @@ def getFolderPaths(path):
     return folders
 
 
+# Responsible for handling deletion of items. Assumes file/dir exists.
+def removeItem(path):
+    if os.path.isfile(path):
+        os.remove(path)
+    else:
+        shutil.rmtree(path)
+    return None
+
+
 if __name__ == "__main__":
-    getUpdatedRoster(team="Atlanta Hawks", seasonEndYr=2025)
     print()
