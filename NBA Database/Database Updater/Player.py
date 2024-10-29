@@ -38,20 +38,6 @@ def updateFile(fileName, path):
     updateLogFile(fileUpdated=fileName, folderPath=path)
 
 
-# Checks if a player was cut from their team.
-#  Return cut status & current roster.
-def playerCut(player, team, seasonEnd):
-    roster = Team.getUpdatedRoster(team=team, seasonEndYr=seasonEnd)
-    cut = True
-    for playerData in roster:
-        if player == playerData[0]:
-            cut = False
-            break
-
-    # return cut, roster
-    return False, roster         # TODO: TEMP
-
-
 # Updates a player's characteristics CSV file. Reads the player's log file to
 #  get their website URL -> Webscrapes URL and pulls characteristics data.
 #  Assumes log file is up-to-date.
