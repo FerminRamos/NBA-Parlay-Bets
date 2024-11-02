@@ -6,8 +6,24 @@
 #  Program cannot make changes to player folders or files within player folders
 import csv
 import requests
+import os
 from bs4 import BeautifulSoup
 import Global
+import Update_Database
+
+
+def initializeTeamFolder(path):
+    os.makedirs(path)
+
+    defaultTeamFiles = ["team statistics.csv",
+                        "roster overview.csv",
+                        "log information.csv"]
+
+    for file in defaultTeamFiles:
+        with open(f"{path}/{file}", "w"):
+            pass
+        Update_Database.updateLogFile(file, path)
+    return None
 
 
 # Returns a CSV of players and their characteristics:
