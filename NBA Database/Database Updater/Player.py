@@ -13,14 +13,30 @@ import requests
 import json
 from bs4 import BeautifulSoup
 import Team
-from datetime import datetime
 import Global
+import Update_Database
+
+
+def initializePlayerFolder(path):
+    os.makedirs(path)
+
+    defaultPlayerFiles = ["player characteristics.csv",
+                          "player season projections.csv",
+                          "player totals.csv",
+                          "player 36-Min stats.csv",
+                          "player advanced stats.csv"]
+    for file in defaultPlayerFiles:
+        with open(f"{path}/{file}", "w"):
+            pass
+        Update_Database.updateLogFile(fileUpdated=file, folderPath=path)
+
+    return None
 
 
 # Receives a filename (as well as a path to said file) that is guaranteed
 #  to be within a player folder. It assigns the workload to the correct
 #  function based on keywords in the filename. This function is called from
-#  "Update Database.py"
+#  "Update_Database.py"
 def updateFile(fileName, path):
     logPath = path.replace(fileName, "log information.csv")
 
@@ -35,7 +51,7 @@ def updateFile(fileName, path):
     elif fileName.find("advanced") != -1:
         updateAdvancedStats(logfilePath=logPath)
 
-    updateLogFile(fileUpdated=fileName, folderPath=path)
+    Update_Database.updateLogFile(fileUpdated=fileName, folderPath=path)
 
 
 # Updates a player's characteristics CSV file. Reads the player's log file to
@@ -59,29 +75,6 @@ def update36MinStats(logfilePath):
 
 
 def updateAdvancedStats(logfilePath):
-    return None
-
-
-# Updates the log file. Log file contains admin data that keeps track
-#  of File Name, Date, and Time of last update. Log files exist in
-#  Team folders & Player folders.
-def updateLogFile(fileUpdated, folderPath):
-    logData = [["File", "Date Last Updated", "Time Last Updated"]]
-    with open(f"{folderPath}/log information.csv", "r", encoding="utf-8") as csvFile:
-        csvReader = csv.reader(csvFile)
-        for line in csvReader:
-            if line[0] == fileUpdated:
-                now = datetime.now()
-                date = now.strftime("%Y-%m-%d")
-                time = now.strftime("%H:%M:%S")
-                logData.append([fileUpdated, date, time])
-            else:
-                logData.append(line)
-
-    with open(f"{folderPath}/log information.csv", "w", encoding="utf-8", newline='') as csvFile:
-        csvWriter = csv.writer(csvFile)
-        csvWriter.writerows(logData)
-
     return None
 
 
