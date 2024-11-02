@@ -9,6 +9,7 @@ import csv
 from tabulate import tabulate
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
 import shutil  # For deleting non-empty directories
 import Schedule
 import Team
@@ -130,8 +131,9 @@ def update(path):
     return None
 
 
-# Creates a new "20XX-20XX Season" folder. ASSUMES a duplicate folder name DNE.
-#  After creation, it populates the folder with sub-folders & placeholder files.
+# Creates a new "20XX-20XX Season" folder with all it's default files &
+#  directories. ASSUMES a duplicate folder name DNE.
+#  Returns Nothing.
 def createSeasonFolder(seasonStartYr, seasonEndYr):
     if seasonEndYr - seasonStartYr != 1:
         print(">> Season date invalid <<  Aborted season creation ")
@@ -145,40 +147,62 @@ def createSeasonFolder(seasonStartYr, seasonEndYr):
     gameSchedule = Schedule.getSchedule(seasonEndYr)
     Schedule.updateSchedule(gameSchedule, seasonEndYr)
 
-    # Make Teams Folders
-    createTeamsFolders(newSeasonPath)
-
-    # TODO: Create player folders to each team folder
-    for teamFolder in getFolderPaths(newSeasonPath):
-        continue
+    # Make Teams Folders & populate each with player folders
+    for team in getTeams():
+        Team.initializeTeamFolder(f"{newSeasonPath}/{team}")
+        for playerData in Team.getUpdatedRoster(team, seasonEndYr):
+            playerName = playerData[0]
+            Player.initializePlayerFolder(f"{newSeasonPath}/{team}/{playerName}")
 
     return None
 
 
-# Creates a team folder for all 30 NBA teams. ASSUMES the parent folder
-#  "20XX-20XX Season" is already created. "Placeholder" files are also
-#  created for each team:
-#    1. Team Statistics
-#    2. Log information
-#  Player folders are also populated with real data. Details on files
-#  contained for each player folder can be found in a different function.
-# TODO: Add placeholder log files when creating each team folder
-# TODO: Add boolean arg, if need to populate with roster folders for each team
-def createTeamsFolders(path):
-    # Gets the pre-set list of teams
+# Gets the pre-set list of teams
+def getTeams():
     teams = []
     with open(Global.BASE_PATH + "/Database Updater/Misc Files/teams list.csv", encoding='utf-8') as csvFile:
         csvReader = csv.reader(csvFile)
         for line in csvReader:
             teams.append(line[0])
     teams.pop(0)  # Pop the CSV header
+    return teams
 
-    # Make folders if DNE
-    for team in teams:
-        try:
-            os.mkdir(path + f"/{team}")
-        except FileExistsError:
-            continue
+
+# Updates the log file. Log file contains admin data that keeps track
+#  of File Name, Date, and Time of last update. Log files exist in
+#  Team folders & Player folders.
+def updateLogFile(fileUpdated, folderPath):
+    logData = [["File", "Date Last Updated", "Time Last Updated"]]
+    updated = False
+    with open(f"{folderPath}/log information.csv", "r",
+              encoding="utf-8") as csvFile:
+        csvReader = csv.reader(csvFile)
+        for line in csvReader:
+            if line[0] == fileUpdated:
+                updated = True
+                date, time = getDateTime()
+                logData.append([fileUpdated, date, time])
+            else:
+                logData.append(line)
+
+    if not updated:  # If file DNE when opened, it'll never update. So Update.
+        date, time = getDateTime()
+        logData.append([fileUpdated, date, time])
+
+    with open(f"{folderPath}/log information.csv", "w", encoding="utf-8",
+              newline='') as csvFile:
+        csvWriter = csv.writer(csvFile)
+        csvWriter.writerows(logData)
+
+    return None
+
+
+# Gets the local date and time. Function called by updateLogFile().
+def getDateTime():
+    now = datetime.now()
+    date = now.strftime("%Y-%m-%d")
+    time = now.strftime("%H:%M:%S")
+    return date, time
 
 
 # Returns the list of folders found in a path
@@ -200,4 +224,11 @@ def removeItem(path):
 
 
 if __name__ == "__main__":
+    # path = "/Users/speak_easy/Python UNM/NBA-Parlay-Bets/NBA Database/Database Updater/test folder"
+    # initializeSeasonFolder(path)
+
+    team = "Boston Celtics"
+    seasonEndYr = 2025
+
+    print(tabulate(Team.getUpdatedRoster(team, seasonEndYr)))
     print()
