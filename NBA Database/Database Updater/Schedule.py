@@ -1,9 +1,9 @@
-# This program is called by "Update Database.py" to update the schedule.
+# This program is called by "Update_Database.py" to update the schedule.
 import csv
 import requests
 from bs4 import BeautifulSoup
 import os
-from tabulate import tabulate
+import Request_Ticker
 
 
 # Gets the game schedule for a given season. Assumes "season schedule"
@@ -11,6 +11,7 @@ from tabulate import tabulate
 def getSchedule(seasonEndYr):
     website = f'https://www.basketball-reference.com/leagues/NBA_{seasonEndYr}_games.html'
 
+    Request_Ticker.addRequest()
     websiteContent = requests.get(website).content
     soup = BeautifulSoup(websiteContent, "html.parser")
 

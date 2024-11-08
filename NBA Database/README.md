@@ -30,7 +30,7 @@ Nonetheless, the Folder Structure is formatted as such:
             * log information (file last update, etc.)
             > Player 1
                 * player characteristics
-                * season Projections
+                * player season Projections
                 * player totals
                 * player 36-Min stats
                 * player advanced stats

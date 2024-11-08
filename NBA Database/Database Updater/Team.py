@@ -10,16 +10,21 @@ import os
 from bs4 import BeautifulSoup
 import Global
 import Update_Database
+import Request_Ticker
 
 
 def initializeTeamFolder(path):
     os.makedirs(path)
 
-    defaultTeamFiles = ["team statistics.csv",
-                        "roster overview.csv",
-                        "log information.csv"]
+    defaultTeamFiles = ["log information.csv",
+                        "team statistics.csv",
+                        "roster overview.csv"]
 
-    for file in defaultTeamFiles:
+    # Create log file to keep track of all other file data
+    with open(f"{path}/{defaultTeamFiles[0]}", "w", encoding='utf-8'):
+        pass
+
+    for file in defaultTeamFiles[1:]:
         with open(f"{path}/{file}", "w"):
             pass
         Update_Database.updateLogFile(file, path)
@@ -37,6 +42,7 @@ def initializeTeamFolder(path):
 #   8. Player Website
 def getUpdatedRoster(team, seasonEndYr):
     websiteLink = getTeamWebsite(team).replace("YEAR", str(seasonEndYr))
+    Request_Ticker.addRequest()
     websiteHTML = requests.get(websiteLink)
     soup = BeautifulSoup(websiteHTML.content, "html.parser")
 
@@ -83,3 +89,8 @@ def getTeamWebsite(team):
             if line[0] == team:
                 return line[1]
 
+
+if __name__ == "__main__":
+    roster = getUpdatedRoster(team="Atlanta Hawks", seasonEndYr=2025)
+    for player in roster:
+        print(player)
