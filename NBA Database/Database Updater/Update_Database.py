@@ -132,7 +132,7 @@ def update(path):
 
 
 # Creates a new "20XX-20XX Season" folder with all it's default files &
-#  directories. ASSUMES a duplicate folder name DNE.
+#  directories. ASSUMES a season folder name DNE yet.
 #  Returns Nothing.
 def createSeasonFolder(seasonStartYr, seasonEndYr):
     if seasonEndYr - seasonStartYr != 1:
@@ -149,11 +149,18 @@ def createSeasonFolder(seasonStartYr, seasonEndYr):
 
     # Make Teams Folders & populate each with player folders
     for team in getTeams():
+        printTeamName(team)
         Team.initializeTeamFolder(f"{newSeasonPath}/{team}")
-        for playerData in Team.getUpdatedRoster(team, seasonEndYr):
-            playerName = playerData[0]
-            Player.initializePlayerFolder(f"{newSeasonPath}/{team}/{playerName}")
+        print("[X] Created 3 Team Default Files.")
 
+        rosterData = Team.getUpdatedRoster(team, seasonEndYr)
+        headers = rosterData[0]
+        roster = rosterData[1:]
+        print(f"[X] Creating {len(roster)} player sub-folders:")
+        for player in roster:
+            playerName = player[0]
+            Player.initializePlayerFolder(f"{newSeasonPath}/{team}/{playerName}", [headers, player])
+            print(f"    [X] {playerName}")
     return None
 
 
@@ -177,6 +184,10 @@ def updateLogFile(fileUpdated, folderPath):
     with open(f"{folderPath}/log information.csv", "r",
               encoding="utf-8") as csvFile:
         csvReader = csv.reader(csvFile)
+        try:
+            csvFile.readline()  # Skip Headers (if lines exist)
+        except:
+            pass
         for line in csvReader:
             if line[0] == fileUpdated:
                 updated = True
@@ -223,12 +234,22 @@ def removeItem(path):
     return None
 
 
-if __name__ == "__main__":
-    # path = "/Users/speak_easy/Python UNM/NBA-Parlay-Bets/NBA Database/Database Updater/test folder"
-    # initializeSeasonFolder(path)
+def printTeamName(team):
+    width = len(team)
+    offset = 8  # Offset of characters before/after the team name
 
-    team = "Boston Celtics"
-    seasonEndYr = 2025
-
-    print(tabulate(Team.getUpdatedRoster(team, seasonEndYr)))
+    i = 0
+    while i < width + offset:
+        print("#", end='')
+        i += 1
     print()
+    print(f"#   {team}   #")  # offset 3 on each side of logo
+    i = 0
+    while i < width + offset:
+        print("#", end='')
+        i += 1
+    print()
+
+
+if __name__ == "__main__":
+    createSeasonFolder(seasonStartYr=2023, seasonEndYr=2024)
