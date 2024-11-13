@@ -167,7 +167,8 @@ def updateTotals(logfilePath):
                      ft, ft_Att, ft_Pct, off_rb, def_rb, total_rb, ast,
                      steals, blocks, turnovers, perFouls, totalPts])
 
-    writeData(filepath=logfilePath.replace("log information.csv", "player totals.csv"), data=data)
+    writeData(filepath=logfilePath.replace("log information.csv", "player totals.csv"),
+              data=data)
     return None
 
 
@@ -225,13 +226,71 @@ def update36MinStats(logfilePath):
                      ft, ft_Att, ft_Pct, off_rb, def_rb, total_rb, ast,
                      steals, blocks, turnovers, perFouls, totalPts])
 
-    writeData(filepath=logfilePath.replace("log information.csv", "player 36-Min stats.csv"), data=data)
+    writeData(filepath=logfilePath.replace("log information.csv", "player 36-Min stats.csv"),
+              data=data)
     return None
 
 
 def updateAdvancedStats(logfilePath):
     soup = getPlayerWebsite(logfilePath)
 
+    data = [["season", "age", "team",
+             "league", "position", "total games",
+             "games started", "minutes played", "player efficiency rating",
+             "true shooting pct", "3-Pts att rate", "free throw att rate",
+             "offensive rebound rate", "defensive rebound rate", "total rebound rate",
+             "assist pct", "steal pct", "block pct",
+             "turnover pct", "player usage pct", "offensive win shares",
+             "defensive win shares", "win shares", "win shares (per 48 min)",
+             "offensive box plus minus", "defensive box plus minus", "box plus minus",
+             "value over replacement player"]]
+
+    advancedTable = soup.find('table', id='advanced').find('tbody')
+    for season in advancedTable.find_all('tr'):
+        try:  # Ignores missing years
+            seasonYrs = season.find('th', {"data-stat": "year_id"}).text.replace("-", "-20") + " Season"
+            age = season.find('td', {"data-stat": "age"}).text
+            team = season.find('td', {"data-stat": "team_name_abbr"}).text
+            league = season.find('td', {"data-stat": "comp_name_abbr"}).text
+            pos = season.find('td', {"data-stat": "pos"}).text
+            totalGames = season.find('td', {"data-stat": "games"}).text
+            gamesStarted = season.find('td', {"data-stat": "games_started"}).text
+            minPlayed = season.find('td', {"data-stat": "mp"}).text
+            playerEffRating = season.find('td', {"data-stat": "per"}).text
+            trueShootingPct = season.find('td', {"data-stat": "ts_pct"}).text
+            pt3_att_rate = season.find('td', {"data-stat": "fg3a_per_fga_pct"}).text
+            freeThrow_att_rate = season.find('td', {"data-stat": "fta_per_fga_pct"}).text
+            off_rebound_pct = season.find('td', {"data-stat": "orb_pct"}).text
+            def_rebound_pct = season.find('td', {"data-stat": "drb_pct"}).text
+            total_rebound_pct = season.find('td', {"data-stat": "trb_pct"}).text
+            ast_pct = season.find('td', {"data-stat": "ast_pct"}).text
+            steal_pct = season.find('td', {"data-stat": "stl_pct"}).text
+            block_pct = season.find('td', {"data-stat": "blk_pct"}).text
+            turnover_pct = season.find('td', {"data-stat": "tov_pct"}).text
+            player_usage_pct = season.find('td', {"data-stat": "usg_pct"}).text
+            off_win_shares = season.find('td', {"data-stat": "ows"}).text
+            def_win_shares = season.find('td', {"data-stat": "dws"}).text
+            win_shares = season.find('td', {"data-stat": "ws"}).text
+            win_shares_per_48Min = season.find('td', {"data-stat": "ws_per_48"}).text
+            off_box_plusMinus = season.find('td', {"data-stat": "obpm"}).text
+            def_box_plusMinus = season.find('td', {"data-stat": "dbpm"}).text
+            box_plusMinus = season.find('td', {"data-stat": "bpm"}).text
+            vorp = season.find('td', {"data-stat": "vorp"}).text
+
+            data.append([seasonYrs, age, team, league, pos, totalGames,
+                         gamesStarted, minPlayed, playerEffRating,
+                         trueShootingPct, pt3_att_rate, freeThrow_att_rate,
+                         off_rebound_pct, def_rebound_pct, total_rebound_pct,
+                         ast_pct, steal_pct, block_pct, turnover_pct,
+                         player_usage_pct, off_win_shares, def_win_shares,
+                         win_shares, win_shares_per_48Min, off_box_plusMinus,
+                         def_box_plusMinus, box_plusMinus, vorp])
+        except AttributeError:
+            continue
+
+    writeData(filepath=logfilePath.replace("log information.csv",
+                                           "player advanced stats.csv"),
+              data=data)
     return None
 
 
@@ -274,4 +333,4 @@ def extractCommentedHTML(soup):
 
 if __name__ == "__main__":
     logfilePath = "/Users/speak_easy/Python UNM/NBA-Parlay-Bets/NBA Database/2024-2025 Season/Atlanta Hawks/Bogdan Bogdanović/log information.csv"
-    update36MinStats(logfilePath)
+    updateAdvancedStats(logfilePath)
