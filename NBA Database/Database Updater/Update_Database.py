@@ -102,7 +102,7 @@ def update(path):
             roster = []      # temp
 
             # 2a. Player was cut -> Notify user -> Delete existing folder ->
-            #     Try to find player.
+            #     Try to find player
             if cut:
                 print(f">> {player} was cut from {team} <<")
                 print(tabulate(roster))
@@ -159,7 +159,7 @@ def createSeasonFolder(seasonStartYr, seasonEndYr):
         print(f"[X] Creating {len(roster)} player sub-folders:")
         for player in roster:
             playerName = player[0]
-            Player.initializePlayerFolder(f"{newSeasonPath}/{team}/{playerName}", [headers, player])
+            Player.initializePlayerFolders(f"{newSeasonPath}/{team}/{playerName}", [headers, player])
             print(f"    [X] {playerName}")
     return None
 

@@ -5,19 +5,19 @@
 #   3. Player Totals
 #   4. Player 36-Min Stats
 #   5. Player Advanced Stats
-#   6. File log information
 import csv
 import os.path
 import requests
 from bs4 import BeautifulSoup
 import Update_Database
 import Request_Ticker
+import Team
 from tabulate import tabulate
 
 
-# Creates a player directory with empty default files. Also populates the
+# Creates a player directory with EMPTY default files. Also populates the
 #  "player characteristics.csv" file without calling updateCharacteristics().
-def initializePlayerFolder(path, characteristicsData):
+def initializePlayerFolders(path, characteristicsData):
     os.makedirs(path)
 
     defaultPlayerFiles = ["log information.csv",
@@ -47,78 +47,89 @@ def initializePlayerFolder(path, characteristicsData):
 # Receives a filename (as well as a path to said file) that is guaranteed
 #  to be within a player folder. It assigns the workload to the correct
 #  function based on keywords in the filename. This function is called from
-#  "Update_Database.py"
+#  "Update_Database.py".
 def updateFile(fileName, path):
     logPath = path.replace(fileName, "log information.csv")
 
+    soup = getPlayerWebsite(logPath)
+    data = []
+
     if fileName.find("characteristics") != -1:
-        updateCharacteristics(logfilePath=logPath)
+        data = updateCharacteristics(logPath=logPath)
     elif fileName.find("season projection") != -1:
-        updateSeasonProjections(logfilePath=logPath)
+        # Season projections no longer supported by Basketball-Reference
+        pass
     elif fileName.find("totals") != -1:
-        updateTotals(logfilePath=logPath)
+        data = updateTotals(soup=soup)
     elif fileName.find("36-min stats") != -1:
-        update36MinStats(logfilePath=logPath)
+        data = update36MinStats(soup=soup)
     elif fileName.find("advanced") != -1:
-        updateAdvancedStats(logfilePath=logPath)
+        data = updateAdvancedStats(soup=soup)
+
+    writeData(filepath=path, data=data)
 
     Update_Database.updateLogFile(fileUpdated=fileName, folderPath=path)
 
 
-# Updates a player's characteristics CSV file. Reads the player's log file to
-#  get their website URL -> Webscrapes URL and pulls characteristics data.
-#  Assumes log file is up-to-date.
-#  Returns nothing, updates log file and characteristics CSV file.
-def updateCharacteristics(logfilePath):
-    return None
+def updateCharacteristics(logPath):
+    path = logPath.split("/")
+    player = path[len(path)-2]
+    team = path[len(path)-3]
+    season = path[len(path)-4]
+    seasonEndYr = season.split("-")[1].replace(" Season", "")
+
+    data = [["Player", "Team", "Position", "Height", "Weight", "DOB", "Nationality", "Experience (Yrs)", "Website"]]
+    for playerData in Team.getUpdatedRoster(team=team, seasonEndYr=seasonEndYr):
+        if playerData[0] == player:
+            data.append(playerData)
+            return data
+    print(f"\n>> {player} Cut From {team} ({season}) <<\n")
+    return data
 
 
-def updateSeasonProjections(logfilePath):
-    soup = getPlayerWebsite(logfilePath)
+#
+# OUTDATED: Basketball-Reference no longer supports this data.
+#
+# def updateSeasonProjections(soup):
+#     projectionTable = soup.find("div", id='div_projection')
+#     tableData = projectionTable.find('tbody').find('tr')
+#
+#     data = [["age", "fg_per_36Min", "fg_att_per_36Min",
+#             "pt3_per_36Min", "pt3_att_per_36Min", "ft_per_36Min",
+#             "ft_att_per_36Min", "off_rb_per_36Min", "total_rb_per_36Min",
+#             "ass_per_36Min", "steals_per_36Min", "blocks_per_36Min",
+#             "turn_overs_per_36Min", "perFouls_per_36Min", "pts_per_36Min",
+#             "fg_pct", "pt3_pct", "ft_pct", "ws_per_48Min"]]
+#     age = tableData.find('td', {'data-stat': 'age'}).text
+#     fg_per_36Min = tableData.find('td', {'data-stat': 'fg_per_mp'}).text
+#     fg_att_per_36Min = tableData.find('td', {'data-stat': 'fga_per_mp'}).text
+#     pt3_per_36Min = tableData.find('td', {'data-stat': 'fg3_per_mp'}).text
+#     pt3_att_per_36Min = tableData.find('td', {'data-stat': 'fg3a_per_mp'}).text
+#     ft_per_36Min = tableData.find('td', {'data-stat': 'ft_per_mp'}).text
+#     ft_att_per_36Min = tableData.find('td', {'data-stat': 'fta_per_mp'}).text
+#     off_rb_per_36Min = tableData.find('td', {'data-stat': 'orb_per_mp'}).text
+#     total_rb_per_36Min = tableData.find('td', {'data-stat': 'trb_per_mp'}).text
+#     asst_per_36Min = tableData.find('td', {'data-stat': 'ast_per_mp'}).text
+#     steals_per_36Min = tableData.find('td', {'data-stat': 'stl_per_mp'}).text
+#     blocks_per_36Min = tableData.find('td', {'data-stat': 'blk_per_mp'}).text
+#     turn_overs_per_36Min = tableData.find('td', {'data-stat': 'tov_per_mp'}).text
+#     perFouls_per_36Min = tableData.find('td', {'data-stat': 'pf_per_mp'}).text
+#     pts_per_36Min = tableData.find('td', {'data-stat': 'pts_per_mp'}).text
+#     fg_pct = tableData.find('td', {'data-stat': 'fg_pct'}).text
+#     pt3_pct = tableData.find('td', {'data-stat': 'fg3_pct'}).text
+#     ft_pct = tableData.find('td', {'data-stat': 'ft_pct'}).text
+#     ws_per_48Min = tableData.find('td', {'data-stat': 'ws_per_48'}).text
+#     data.append([age, fg_per_36Min, fg_att_per_36Min,
+#                  pt3_per_36Min, pt3_att_per_36Min, ft_per_36Min,
+#                  ft_att_per_36Min, off_rb_per_36Min, total_rb_per_36Min,
+#                  asst_per_36Min, steals_per_36Min, blocks_per_36Min,
+#                  turn_overs_per_36Min, perFouls_per_36Min, pts_per_36Min,
+#                  fg_pct, pt3_pct, ft_pct, ws_per_48Min])
+#
+#     return data
 
-    projectionTable = soup.find("div", id='div_projection')
-    tableData = projectionTable.find('tbody').find('tr')
 
-    data = [["age", "fg_per_36Min", "fg_att_per_36Min",
-            "pt3_per_36Min", "pt3_att_per_36Min", "ft_per_36Min",
-            "ft_att_per_36Min", "off_rb_per_36Min", "total_rb_per_36Min",
-            "ass_per_36Min", "steals_per_36Min", "blocks_per_36Min",
-            "turn_overs_per_36Min", "perFouls_per_36Min", "pts_per_36Min",
-            "fg_pct", "pt3_pct", "ft_pct", "ws_per_48Min"]]
-    age = tableData.find('td', {'data-stat': 'age'}).text
-    fg_per_36Min = tableData.find('td', {'data-stat': 'fg_per_mp'}).text
-    fg_att_per_36Min = tableData.find('td', {'data-stat': 'fga_per_mp'}).text
-    pt3_per_36Min = tableData.find('td', {'data-stat': 'fg3_per_mp'}).text
-    pt3_att_per_36Min = tableData.find('td', {'data-stat': 'fg3a_per_mp'}).text
-    ft_per_36Min = tableData.find('td', {'data-stat': 'ft_per_mp'}).text
-    ft_att_per_36Min = tableData.find('td', {'data-stat': 'fta_per_mp'}).text
-    off_rb_per_36Min = tableData.find('td', {'data-stat': 'orb_per_mp'}).text
-    total_rb_per_36Min = tableData.find('td', {'data-stat': 'trb_per_mp'}).text
-    asst_per_36Min = tableData.find('td', {'data-stat': 'ast_per_mp'}).text
-    steals_per_36Min = tableData.find('td', {'data-stat': 'stl_per_mp'}).text
-    blocks_per_36Min = tableData.find('td', {'data-stat': 'blk_per_mp'}).text
-    turn_overs_per_36Min = tableData.find('td', {'data-stat': 'tov_per_mp'}).text
-    perFouls_per_36Min = tableData.find('td', {'data-stat': 'pf_per_mp'}).text
-    pts_per_36Min = tableData.find('td', {'data-stat': 'pts_per_mp'}).text
-    fg_pct = tableData.find('td', {'data-stat': 'fg_pct'}).text
-    pt3_pct = tableData.find('td', {'data-stat': 'fg3_pct'}).text
-    ft_pct = tableData.find('td', {'data-stat': 'ft_pct'}).text
-    ws_per_48Min = tableData.find('td', {'data-stat': 'ws_per_48'}).text
-    data.append([age, fg_per_36Min, fg_att_per_36Min,
-                 pt3_per_36Min, pt3_att_per_36Min, ft_per_36Min,
-                 ft_att_per_36Min, off_rb_per_36Min, total_rb_per_36Min,
-                 asst_per_36Min, steals_per_36Min, blocks_per_36Min,
-                 turn_overs_per_36Min, perFouls_per_36Min, pts_per_36Min,
-                 fg_pct, pt3_pct, ft_pct, ws_per_48Min])
-
-    writeData(logfilePath.replace('log information.csv',
-                                  'player season projections.csv'), data)
-    return None
-
-
-def updateTotals(logfilePath):
-    soup = getPlayerWebsite(logfilePath)
-
+def updateTotals(soup):
     data = [["season", "age", "team",
              "position", "games", "games started",
              "minutes played", "field goals", "field goal att",
@@ -131,53 +142,49 @@ def updateTotals(logfilePath):
              "personal fouls", "total pts"]]
     totalsTable = soup.find("table", id="totals").find('tbody')
     for season in totalsTable.find_all('tr'):
-        seasonYrs = season.find('th', {"data-stat": "season"}).text.replace("-", "-20") + " Season"
-        age = season.find('td', {"data-stat": "age"}).text
-        team = season.find('td', {"data-stat": "team_id"}).text
-        pos = season.find('td', {"data-stat": "pos"}).text
-        games = season.find('td', {"data-stat": "g"}).text
-        gamesStarted = season.find('td', {"data-stat": "gs"}).text
-        minPlayed = season.find('td', {"data-stat": "mp"}).text
-        fieldGoals = season.find('td', {"data-stat": "fg"}).text
-        fieldGoal_Att = season.find('td', {"data-stat": "fga"}).text
-        fieldGoal_Pct = season.find('td', {"data-stat": "fg_pct"}).text
-        pt3 = season.find('td', {"data-stat": "fg3"}).text
-        pt3_Att = season.find('td', {"data-stat": "fg3a"}).text
-        pt3_Pct = season.find('td', {"data-stat": "fg3_pct"}).text
-        pt2 = season.find('td', {"data-stat": "fg2"}).text
-        pt2_Att = season.find('td', {"data-stat": "fg2a"}).text
-        pt2_Pct = season.find('td', {"data-stat": "fg2_pct"}).text
-        efg_Pct = season.find('td', {"data-stat": "efg_pct"}).text
-        ft = season.find('td', {"data-stat": "ft"}).text
-        ft_Att = season.find('td', {"data-stat": "fta"}).text
-        ft_Pct = season.find('td', {"data-stat": "ft_pct"}).text
-        off_rb = season.find('td', {"data-stat": "orb"}).text
-        def_rb = season.find('td', {"data-stat": "drb"}).text
-        total_rb = season.find('td', {"data-stat": "trb"}).text
-        ast = season.find('td', {"data-stat": "ast"}).text
-        steals = season.find('td', {"data-stat": "stl"}).text
-        blocks = season.find('td', {"data-stat": "blk"}).text
-        turnovers = season.find('td', {"data-stat": "tov"}).text
-        perFouls = season.find('td', {"data-stat": "pf"}).text
-        totalPts = season.find('td', {"data-stat": "pts"}).text
+        try:
+            seasonYrs = season.find('th', {"data-stat": "season"}).text.replace("-", "-20") + " Season"
+            age = season.find('td', {"data-stat": "age"}).text
+            team = season.find('td', {"data-stat": "team_id"}).text
+            pos = season.find('td', {"data-stat": "pos"}).text
+            games = season.find('td', {"data-stat": "g"}).text
+            gamesStarted = season.find('td', {"data-stat": "gs"}).text
+            minPlayed = season.find('td', {"data-stat": "mp"}).text
+            fieldGoals = season.find('td', {"data-stat": "fg"}).text
+            fieldGoal_Att = season.find('td', {"data-stat": "fga"}).text
+            fieldGoal_Pct = season.find('td', {"data-stat": "fg_pct"}).text
+            pt3 = season.find('td', {"data-stat": "fg3"}).text
+            pt3_Att = season.find('td', {"data-stat": "fg3a"}).text
+            pt3_Pct = season.find('td', {"data-stat": "fg3_pct"}).text
+            pt2 = season.find('td', {"data-stat": "fg2"}).text
+            pt2_Att = season.find('td', {"data-stat": "fg2a"}).text
+            pt2_Pct = season.find('td', {"data-stat": "fg2_pct"}).text
+            efg_Pct = season.find('td', {"data-stat": "efg_pct"}).text
+            ft = season.find('td', {"data-stat": "ft"}).text
+            ft_Att = season.find('td', {"data-stat": "fta"}).text
+            ft_Pct = season.find('td', {"data-stat": "ft_pct"}).text
+            off_rb = season.find('td', {"data-stat": "orb"}).text
+            def_rb = season.find('td', {"data-stat": "drb"}).text
+            total_rb = season.find('td', {"data-stat": "trb"}).text
+            ast = season.find('td', {"data-stat": "ast"}).text
+            steals = season.find('td', {"data-stat": "stl"}).text
+            blocks = season.find('td', {"data-stat": "blk"}).text
+            turnovers = season.find('td', {"data-stat": "tov"}).text
+            perFouls = season.find('td', {"data-stat": "pf"}).text
+            totalPts = season.find('td', {"data-stat": "pts"}).text
 
-        data.append([seasonYrs, age, team, pos, games, gamesStarted,
-                     minPlayed, fieldGoals, fieldGoal_Att, fieldGoal_Pct,
-                     pt3, pt3_Att, pt3_Pct, pt2, pt2_Att, pt2_Pct, efg_Pct,
-                     ft, ft_Att, ft_Pct, off_rb, def_rb, total_rb, ast,
-                     steals, blocks, turnovers, perFouls, totalPts])
+            data.append([seasonYrs, age, team, pos, games, gamesStarted,
+                         minPlayed, fieldGoals, fieldGoal_Att, fieldGoal_Pct,
+                         pt3, pt3_Att, pt3_Pct, pt2, pt2_Att, pt2_Pct, efg_Pct,
+                         ft, ft_Att, ft_Pct, off_rb, def_rb, total_rb, ast,
+                         steals, blocks, turnovers, perFouls, totalPts])
+        except AttributeError:
+            continue
+    return data
 
-    writeData(filepath=logfilePath.replace("log information.csv", "player totals.csv"),
-              data=data)
-    return None
 
-
-def update36MinStats(logfilePath):
-    soup = getPlayerWebsite(logfilePath)
-
-    # This table is commented out, extract it.
-    table36MinStats = soup.find('div', {"id": "all_per_minute-playoffs_per_minute"})
-    table36MinStats = extractCommentedHTML(table36MinStats).find('tbody').find_all('tr')
+def update36MinStats(soup):
+    table36MinStats = soup.find('table', id='per_minute_stats')
 
     data = [["season", "age", "team",
              "position", "games", "games started",
@@ -189,50 +196,50 @@ def update36MinStats(logfilePath):
              "total rebounds", "assists", "steals",
              "blocks", "turnovers", "personal fouls",
              "total pts"]]
-    for season in table36MinStats:
-        # print(season)
-        seasonYrs = season.find('th', {"data-stat": "season"}).text.replace("-", "-20") + " Season"
-        age = season.find('td', {"data-stat": "age"}).text
-        team = season.find('td', {"data-stat": "team_id"}).text
-        pos = season.find('td', {"data-stat": "pos"}).text
-        games = season.find('td', {"data-stat": "g"}).text
-        gamesStarted = season.find('td', {"data-stat": "gs"}).text
-        minPlayed = season.find('td', {"data-stat": "mp"}).text
-        fieldGoals = season.find('td', {"data-stat": "fg_per_mp"}).text
-        fieldGoal_Att = season.find('td', {"data-stat": "fga_per_mp"}).text
-        fieldGoal_Pct = season.find('td', {"data-stat": "fg_pct"}).text
-        pt3 = season.find('td', {"data-stat": "fg3_per_mp"}).text
-        pt3_Att = season.find('td', {"data-stat": "fg3a_per_mp"}).text
-        pt3_Pct = season.find('td', {"data-stat": "fg3_pct"}).text
-        pt2 = season.find('td', {"data-stat": "fg2_per_mp"}).text
-        pt2_Att = season.find('td', {"data-stat": "fg2a_per_mp"}).text
-        pt2_Pct = season.find('td', {"data-stat": "fg2_pct"}).text
-        ft = season.find('td', {"data-stat": "ft_per_mp"}).text
-        ft_Att = season.find('td', {"data-stat": "fta_per_mp"}).text
-        ft_Pct = season.find('td', {"data-stat": "ft_pct"}).text
-        off_rb = season.find('td', {"data-stat": "orb_per_mp"}).text
-        def_rb = season.find('td', {"data-stat": "drb_per_mp"}).text
-        total_rb = season.find('td', {"data-stat": "trb_per_mp"}).text
-        ast = season.find('td', {"data-stat": "ast_per_mp"}).text
-        steals = season.find('td', {"data-stat": "stl_per_mp"}).text
-        blocks = season.find('td', {"data-stat": "blk_per_mp"}).text
-        turnovers = season.find('td', {"data-stat": "tov_per_mp"}).text
-        perFouls = season.find('td', {"data-stat": "pf_per_mp"}).text
-        totalPts = season.find('td', {"data-stat": "pts_per_mp"}).text
+    for season in table36MinStats.find_all("tr"):
+        try:
+            seasonYrs = season.find('th', {"data-stat": "year_id"}).text.replace("-", "-20") + " Season"
+            age = season.find('td', {"data-stat": "age"}).text
+            team = season.find('td', {"data-stat": "team_name_abbr"}).text
+            pos = season.find('td', {"data-stat": "pos"}).text
+            games = season.find('td', {"data-stat": "games"}).text
+            gamesStarted = season.find('td', {"data-stat": "games_started"}).text
+            minPlayed = season.find('td', {"data-stat": "mp"}).text
+            fieldGoals = season.find('td', {"data-stat": "fg_per_minute_36"}).text
+            fieldGoal_Att = season.find('td', {"data-stat": "fga_per_minute_36"}).text
+            fieldGoal_Pct = season.find('td', {"data-stat": "fg_pct"}).text
+            pt3 = season.find('td', {"data-stat": "fg3_per_minute_36"}).text
+            pt3_Att = season.find('td', {"data-stat": "fg3a_per_minute_36"}).text
+            pt3_Pct = season.find('td', {"data-stat": "fg3_pct"}).text
+            pt2 = season.find('td', {"data-stat": "fg2_per_minute_36"}).text
+            pt2_Att = season.find('td', {"data-stat": "fg2a_per_minute_36"}).text
+            pt2_Pct = season.find('td', {"data-stat": "fg2_pct"}).text
+            efg_pct = season.find('td', {"data-stat": "efg_pct"}).text
+            ft = season.find('td', {"data-stat": "ft_per_minute_36"}).text
+            ft_Att = season.find('td', {"data-stat": "fta_per_minute_36"}).text
+            ft_Pct = season.find('td', {"data-stat": "ft_pct"}).text
+            off_rb = season.find('td', {"data-stat": "orb_per_minute_36"}).text
+            def_rb = season.find('td', {"data-stat": "drb_per_minute_36"}).text
+            total_rb = season.find('td', {"data-stat": "trb_per_minute_36"}).text
+            ast = season.find('td', {"data-stat": "ast_per_minute_36"}).text
+            steals = season.find('td', {"data-stat": "stl_per_minute_36"}).text
+            blocks = season.find('td', {"data-stat": "blk_per_minute_36"}).text
+            turnovers = season.find('td', {"data-stat": "tov_per_minute_36"}).text
+            perFouls = season.find('td', {"data-stat": "pf_per_minute_36"}).text
+            totalPts = season.find('td', {"data-stat": "pts_per_minute_36"}).text
 
-        data.append([seasonYrs, age, team, pos, games, gamesStarted,
-                     minPlayed, fieldGoals, fieldGoal_Att, fieldGoal_Pct,
-                     pt3, pt3_Att, pt3_Pct, pt2, pt2_Att, pt2_Pct,
-                     ft, ft_Att, ft_Pct, off_rb, def_rb, total_rb, ast,
-                     steals, blocks, turnovers, perFouls, totalPts])
+            data.append([seasonYrs, age, team, pos, games, gamesStarted,
+                         minPlayed, fieldGoals, fieldGoal_Att, fieldGoal_Pct,
+                         pt3, pt3_Att, pt3_Pct, pt2, pt2_Att, pt2_Pct, efg_pct,
+                         ft, ft_Att, ft_Pct, off_rb, def_rb, total_rb, ast,
+                         steals, blocks, turnovers, perFouls, totalPts])
+        except AttributeError:
+            continue
+    return data
 
-    writeData(filepath=logfilePath.replace("log information.csv", "player 36-Min stats.csv"),
-              data=data)
-    return None
 
-
-def updateAdvancedStats(logfilePath):
-    soup = getPlayerWebsite(logfilePath)
+def updateAdvancedStats(soup):
+    advancedTable = soup.find('table', id='advanced').find('tbody')
 
     data = [["season", "age", "team",
              "league", "position", "total games",
@@ -244,8 +251,6 @@ def updateAdvancedStats(logfilePath):
              "defensive win shares", "win shares", "win shares (per 48 min)",
              "offensive box plus minus", "defensive box plus minus", "box plus minus",
              "value over replacement player"]]
-
-    advancedTable = soup.find('table', id='advanced').find('tbody')
     for season in advancedTable.find_all('tr'):
         try:  # Ignores missing years
             seasonYrs = season.find('th', {"data-stat": "year_id"}).text.replace("-", "-20") + " Season"
@@ -288,10 +293,7 @@ def updateAdvancedStats(logfilePath):
         except AttributeError:
             continue
 
-    writeData(filepath=logfilePath.replace("log information.csv",
-                                           "player advanced stats.csv"),
-              data=data)
-    return None
+    return data
 
 
 # Writes data to a CSV file. Returns nothing.
@@ -301,7 +303,7 @@ def writeData(filepath, data):
         csvWriter.writerows(data)
 
     Update_Database.updateLogFile(fileUpdated=os.path.basename(filepath),
-                                  folderPath=os.path.dirname(logfilePath))
+                                  folderPath=os.path.dirname(filepath))
     return None
 
 
@@ -322,7 +324,8 @@ def getPlayerWebsite(logfilePath):
 # This function converts our Soup obj to a String. Replaces the commented
 #  out HTML "<!-- -->" with "". Then, converts the string back to a Soup
 #  obj so we can extract the necessary data. Necessary since BeautifulSoup
-#  can't read commented out HTML.
+#  can't read commented out HTML. Function not currently in use. But useful
+#  when site is undergoing updates.
 def extractCommentedHTML(soup):
     myStr = str(soup)
     myStr = myStr.replace("<!--", "")
@@ -332,5 +335,35 @@ def extractCommentedHTML(soup):
 
 
 if __name__ == "__main__":
-    logfilePath = "/Users/speak_easy/Python UNM/NBA-Parlay-Bets/NBA Database/2024-2025 Season/Atlanta Hawks/Bogdan Bogdanović/log information.csv"
-    updateAdvancedStats(logfilePath)
+    teamPath = "/Users/speak_easy/Python UNM/NBA-Parlay-Bets/NBA Database/2024-2025 Season/Atlanta Hawks"
+    roster = [d for d in os.listdir(teamPath) if os.path.isdir(os.path.join(teamPath, d))]
+    for player in roster:
+        print(f"[X] Updating {player} Folder")
+        logfilePath = f"{teamPath}/{player}/log information.csv"
+
+        # Updating this first to update player website (req. for soup)
+        data = updateCharacteristics(logfilePath)
+        writeData(filepath=logfilePath.replace('log information.csv',
+                                               'player characteristics.csv'),
+                  data=data)
+        print(f"\t[X] updateCharacteristics()")
+
+        soup = getPlayerWebsite(logfilePath)
+
+        data = updateAdvancedStats(soup)
+        writeData(filepath=logfilePath.replace('log information.csv',
+                                               'player advanced stats.csv'),
+                  data=data)
+        print(f"\t[X] updateAdvancedStats()")
+
+        data = updateTotals(soup)
+        writeData(filepath=logfilePath.replace('log information.csv',
+                                               'player totals.csv'),
+                  data=data)
+        print(f"\t[X] updateTotals()")
+
+        data = update36MinStats(soup)
+        writeData(filepath=logfilePath.replace('log information.csv',
+                                               'player 36-Min stats.csv'),
+                  data=data)
+        print(f"\t[X] update36MinStats()")
