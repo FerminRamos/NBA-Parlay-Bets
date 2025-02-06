@@ -129,6 +129,57 @@ def updateCharacteristics(logPath):
 #     return data
 
 
+def updateLast5Games():
+    data = [["date", "team", "opponent",
+             "win/loss", "score", "minutes played",
+             "field goals", "field goal att", "field goal pct",
+             "3-Pts", "3-Pts Att", "3-Pts Pct",
+             "free throws", "free throw att","free throw pct",
+             "offensive rebounds", "defensive rebounds", "total rebounds",
+             "assists", "steals", "blocks",
+             "turnovers", "personal fouls",
+             "pts", "game score", "plus/minus"]]
+    try:
+        totalsTable = soup.find("table", id="last5").find('tbody')
+        # print(totalsTable.prettify())
+        for season in totalsTable.find_all('tr'):
+            date = season.find('th', {"data-stat": "date"}).text
+            team = season.find('td', {"data-stat": "team_name_abbr"}).text
+            opp = season.find('td', {"data-stat": "opp_name_abbr"}).text
+            result = season.find('td', {"data-stat": "game_result"}).text.split(" ")
+            winLoss = result[0]
+            score = result[1]
+            minPlayed = season.find('td', {"data-stat": "mp"}).text
+            fieldGoal = season.find('td', {"data-stat": "fg"}).text
+            fieldGoalAtt = season.find('td', {"data-stat": "fga"}).text
+            fieldGoalPct = season.find('td', {"data-stat": "fg_pct"}).text
+            pt3 = season.find('td', {"data-stat": "fg3"}).text
+            pt3_Att = season.find('td', {"data-stat": "fg3a"}).text
+            pt3_Pct = season.find('td', {"data-stat": "fg3_pct"}).text
+            ft = season.find('td', {"data-stat": "ft"}).text
+            ft_Att = season.find('td', {"data-stat": "fta"}).text
+            ft_Pct = season.find('td', {"data-stat": "ft_pct"}).text
+            orb = season.find('td', {"data-stat": "orb"}).text
+            drb = season.find('td', {"data-stat": "drb"}).text
+            trb = season.find('td', {"data-stat": "trb"}).text
+            ast = season.find('td', {"data-stat": "ast"}).text
+            stl = season.find('td', {"data-stat": "stl"}).text
+            blk = season.find('td', {"data-stat": "blk"}).text
+            tov = season.find('td', {"data-stat": "tov"}).text
+            pf = season.find('td', {"data-stat": "pf"}).text
+            pts = season.find('td', {"data-stat": "pts"}).text
+            gameScore = season.find('td', {"data-stat": "game_score"}).text
+            plusMinus = season.find('td', {"data-stat": "plus_minus"}).text
+            data.append([date, team, opp, winLoss, score, minPlayed,
+                         fieldGoal, fieldGoalAtt, fieldGoalPct, pt3,
+                         pt3_Att, pt3_Pct, ft, ft_Att, ft_Pct, orb,
+                         drb, trb, ast, stl, blk, tov, pf, pts, gameScore,
+                         plusMinus])
+    except AttributeError:
+        return []
+    return data
+
+
 def updateTotals(soup):
     data = [["season", "age", "team",
              "position", "games", "games started",
@@ -350,6 +401,13 @@ if __name__ == "__main__":
         # print(f"\t[X] updateCharacteristics()")
 
         soup = getPlayerWebsite(logfilePath)
+
+        data = updateLast5Games()
+        writeData(filepath=logfilePath.replace('log information.csv',
+                                               'player last 5 games.csv'),
+                  data=data)
+        print(f"\t[X] updateLast5Games()")
+        print(tabulate(data))
 
         # data = updateAdvancedStats(soup)
         # writeData(filepath=logfilePath.replace('log information.csv',
