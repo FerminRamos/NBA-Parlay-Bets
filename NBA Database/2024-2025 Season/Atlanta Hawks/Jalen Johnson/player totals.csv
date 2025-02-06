@@ -1,0 +1,5 @@
+season,age,team,position,games,games started,minutes played,field goals,field goal att,field goal pct,3-Pts,3-Pts Att,3-Pts Pct,2-Pts,2-Pts Att,2-Pts Pct,EFG pct,free throws,free throw att,free throw pct,offensive rebounds,defensive rebounds,total rebounds,assists,steals,blocks,turnovers,personal fouls,total pts
+2021-2022 Season,20,ATL,PF,22,0,120,22,41,.537,3,13,.231,19,28,.679,.573,5,7,.714,2,24,26,3,3,2,9,9,52
+2022-2023 Season,21,ATL,SF,70,6,1042,158,322,.491,30,104,.288,128,218,.587,.537,49,78,.628,51,231,282,83,38,34,41,113,395
+2023-2024 Season,22,ATL,SF,56,52,1889,359,702,.511,71,200,.355,288,502,.574,.562,107,147,.728,74,414,488,203,67,47,101,133,896
+2024-2025 Season,23,ATL,SF,36,36,1284,271,542,.500,44,141,.312,227,401,.566,.541,94,126,.746,62,297,359,181,56,36,106,67,680
