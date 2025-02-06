@@ -140,15 +140,16 @@ def updateTotals(soup):
              "defensive rebounds", "total rebounds", "assists",
              "steals", "blocks", "turnovers",
              "personal fouls", "total pts"]]
-    totalsTable = soup.find("table", id="totals").find('tbody')
+    totalsTable = soup.find("table", id="totals_stats").find('tbody')
+    print(totalsTable.prettify())
     for season in totalsTable.find_all('tr'):
         try:
-            seasonYrs = season.find('th', {"data-stat": "season"}).text.replace("-", "-20") + " Season"
+            seasonYrs = season.find('th', {"data-stat": "year_id"}).text.replace("-", "-20") + " Season"
             age = season.find('td', {"data-stat": "age"}).text
-            team = season.find('td', {"data-stat": "team_id"}).text
+            team = season.find('td', {"data-stat": "team_name_abbr"}).text
             pos = season.find('td', {"data-stat": "pos"}).text
-            games = season.find('td', {"data-stat": "g"}).text
-            gamesStarted = season.find('td', {"data-stat": "gs"}).text
+            games = season.find('td', {"data-stat": "games"}).text
+            gamesStarted = season.find('td', {"data-stat": "games_started"}).text
             minPlayed = season.find('td', {"data-stat": "mp"}).text
             fieldGoals = season.find('td', {"data-stat": "fg"}).text
             fieldGoal_Att = season.find('td', {"data-stat": "fga"}).text
@@ -342,28 +343,31 @@ if __name__ == "__main__":
         logfilePath = f"{teamPath}/{player}/log information.csv"
 
         # Updating this first to update player website (req. for soup)
-        data = updateCharacteristics(logfilePath)
-        writeData(filepath=logfilePath.replace('log information.csv',
-                                               'player characteristics.csv'),
-                  data=data)
-        print(f"\t[X] updateCharacteristics()")
+        # data = updateCharacteristics(logfilePath)
+        # writeData(filepath=logfilePath.replace('log information.csv',
+        #                                        'player characteristics.csv'),
+        #           data=data)
+        # print(f"\t[X] updateCharacteristics()")
 
         soup = getPlayerWebsite(logfilePath)
 
-        data = updateAdvancedStats(soup)
-        writeData(filepath=logfilePath.replace('log information.csv',
-                                               'player advanced stats.csv'),
-                  data=data)
-        print(f"\t[X] updateAdvancedStats()")
+        # data = updateAdvancedStats(soup)
+        # writeData(filepath=logfilePath.replace('log information.csv',
+        #                                        'player advanced stats.csv'),
+        #           data=data)
+        # print(f"\t[X] updateAdvancedStats()")
+        # print(tabulate(data))
 
-        data = updateTotals(soup)
-        writeData(filepath=logfilePath.replace('log information.csv',
-                                               'player totals.csv'),
-                  data=data)
-        print(f"\t[X] updateTotals()")
+        # data = updateTotals(soup)
+        # writeData(filepath=logfilePath.replace('log information.csv',
+        #                                        'player totals.csv'),
+        #           data=data)
+        # print(f"\t[X] updateTotals()")
+        # print(tabulate(data))
 
-        data = update36MinStats(soup)
-        writeData(filepath=logfilePath.replace('log information.csv',
-                                               'player 36-Min stats.csv'),
-                  data=data)
-        print(f"\t[X] update36MinStats()")
+        # data = update36MinStats(soup)
+        # writeData(filepath=logfilePath.replace('log information.csv',
+        #                                        'player 36-Min stats.csv'),
+        #           data=data)
+        # print(f"\t[X] update36MinStats()")
+        # print(tabulate(data))
