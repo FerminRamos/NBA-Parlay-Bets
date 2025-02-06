@@ -1,0 +1,6 @@
+date,team,opponent,win/loss,score,minutes played,field goals,field goal att,field goal pct,3-Pts,3-Pts Att,3-Pts Pct,free throws,free throw att,free throw pct,offensive rebounds,defensive rebounds,total rebounds,assists,steals,blocks,turnovers,personal fouls,pts,game score,plus/minus
+2025-02-03,ATL,DET,W,132-130,11,0,1,.000,0,0,,0,0,,1,1,2,0,0,1,0,1,0,0.6,5
+2025-02-01,ATL,IND,L,127-132,13,5,9,.556,0,2,.000,0,1,.000,1,2,3,0,0,2,0,0,10,8.0,4
+2025-01-30,ATL,CLE,L,115-137,5,1,2,.500,0,0,,0,0,,0,2,2,0,0,0,0,0,2,1.6,-1
+2025-01-27,ATL,MIN,L,92-100,9,0,2,.000,0,1,.000,0,0,,1,1,2,1,0,0,0,2,0,-0.5,-3
+2025-01-25,ATL,TOR,L,94-117,3,0,1,.000,0,1,.000,1,2,.500,0,1,1,0,0,0,0,0,1,0.2,5
