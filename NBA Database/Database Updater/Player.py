@@ -243,7 +243,7 @@ def update36MinStats(soup):
              "minutes played", "field goals", "field goal att",
              "field goal pct", "3-Pts", "3-Pts Att",
              "3-Pts Pct", "2-Pts", "2-Pts Att",
-             "2-Pts Pct", "free throws", "free throw att",
+             "2-Pts Pct", "free throws", "free throw att", "EFG Pct",
              "free throw pct", "offensive rebounds", "defensive rebounds",
              "total rebounds", "assists", "steals",
              "blocks", "turnovers", "personal fouls",
@@ -402,12 +402,12 @@ if __name__ == "__main__":
 
         soup = getPlayerWebsite(logfilePath)
 
-        data = updateLast5Games()
-        writeData(filepath=logfilePath.replace('log information.csv',
-                                               'player last 5 games.csv'),
-                  data=data)
-        print(f"\t[X] updateLast5Games()")
-        print(tabulate(data))
+        # data = updateLast5Games()
+        # writeData(filepath=logfilePath.replace('log information.csv',
+        #                                        'player last 5 games.csv'),
+        #           data=data)
+        # print(f"\t[X] updateLast5Games()")
+        # print(tabulate(data))
 
         # data = updateAdvancedStats(soup)
         # writeData(filepath=logfilePath.replace('log information.csv',
@@ -423,9 +423,9 @@ if __name__ == "__main__":
         # print(f"\t[X] updateTotals()")
         # print(tabulate(data))
 
-        # data = update36MinStats(soup)
-        # writeData(filepath=logfilePath.replace('log information.csv',
-        #                                        'player 36-Min stats.csv'),
-        #           data=data)
-        # print(f"\t[X] update36MinStats()")
-        # print(tabulate(data))
+        data = update36MinStats(soup)
+        writeData(filepath=logfilePath.replace('log information.csv',
+                                               'player 36-Min stats.csv'),
+                  data=data)
+        print(f"\t[X] update36MinStats()")
+        print(tabulate(data))
